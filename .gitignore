@@ -1,0 +1,33 @@
+# Ignore node_modules en todos los subproyectos
+**/node_modules/
+
+# Ignore dist o build en todos
+**/dist/
+**/build/
+
+# Logs
+**/*.log
+*.log
+
+# Env files
+**/.env
+.env
+
+# TypeScript build info
+**/*.tsbuildinfo
+
+# IDE/editor settings
+.vscode/
+.idea/
+.DS_Store
+
+# Coverage
+**/coverage/
+
+# Otros temporales
+**/temp/
+**/tmp/
+
+# Ignore local database dumps or runtime files
+**/*.pid
+**/*.seed
