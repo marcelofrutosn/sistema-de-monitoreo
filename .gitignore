@@ -9,6 +9,8 @@
 **/*.log
 *.log
 
+**/.env
+.env
 
 # TypeScript build info
 **/*.tsbuildinfo
