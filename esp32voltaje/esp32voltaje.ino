@@ -10,12 +10,12 @@
 #define MEASURE_INTERVAL 10000  // 10 segundos
 
 // WiFi
-const char* ssid = "TU_SSID";
-const char* password = "TU_PASSWORD";
+const char* ssid = "Marcelo F";
+const char* password = "Paraguay1";
 
 // Backend
-const char* serverUrl = "http://192.168.0.123:3000/api/mediciones"; // IP local del backend
-const char* apiKey = "TU_API_KEY";  // si usás API key
+const char* serverUrl = "https://sistema-de-monitoreo-55c14c44edac.herokuapp.com/api/mediciones"; // IP local del backend
+const char* apiKey = "miclave123";  // si usás API key
 
 INA226_WE ina226 = INA226_WE(I2C_ADDRESS);
 OneWire oneWire(ONE_WIRE_BUS);
