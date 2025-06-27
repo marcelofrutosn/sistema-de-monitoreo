@@ -1,0 +1,22 @@
+# Node modules
+node_modules/
+
+# Archivos intermedios de TypeScript
+*.tsbuildinfo
+
+# Archivos de entorno (no subir a Heroku)
+.env
+.env.*
+
+# Logs
+*.log
+logs/
+
+# Archivos del sistema
+.DS_Store
+Thumbs.db
+
+# IDEs y editores
+.vscode/
+.idea/
+*.swp
