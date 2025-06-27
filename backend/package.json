@@ -2,7 +2,12 @@
   "name": "esp32-backend",
   "version": "1.0.0",
   "scripts": {
-    "start": "nodemon src/index.ts"
+    "start": "node dist/index.js",
+    "dev": "nodemon src/index.ts",
+    "build": "npx tsc",
+    "build:full": "rm -rf public && cd ../frontend && npx vite build --mode production && mv dist ../backend/public && cd ../backend && npx tsc",
+    "build:full-win": "powershell -Command \"if (Test-Path public) { Remove-Item public -Recurse -Force }; cd ../frontend; npx vite build --mode production; Move-Item dist ../backend/public; cd ../backend; npx tsc\"",
+    "deploy": "git add . && git commit -m \"deploy a heroku\" && git push heroku master"
   },
   "dependencies": {
     "@types/cors": "^2.8.19",
