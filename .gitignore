@@ -22,7 +22,8 @@
 
 # Coverage
 **/coverage/
-
+**/dist
+**/public
 # Otros temporales
 **/temp/
 **/tmp/
