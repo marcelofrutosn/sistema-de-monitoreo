@@ -3,7 +3,7 @@ import { useNavigate } from "@tanstack/react-router";
 import { useAppDispatch } from "../store";
 import { clearToken } from "../store/authSlice";
 import { useQuery } from "@tanstack/react-query";
-import axios from "axios";
+import { io } from "socket.io-client";
 
 import {
   LineChart,
@@ -20,6 +20,7 @@ interface Medicion {
   temperatura: number;
   voltaje: number;
   corriente: number;
+  bateria?: number;
   timestamp: string;
 }
 
@@ -42,20 +43,21 @@ export default function PanelPage() {
     },
   });
 
-  // WebSocket para datos en tiempo real
+  // Socket.IO para datos en tiempo real
   useEffect(() => {
-    const ws = new WebSocket("ws://localhost:3000");
+    const socket = io(import.meta.env.VITE_WS_URL);
 
-    ws.onopen = () => console.log("✅ WebSocket conectado");
-    ws.onclose = () => console.log("❌ WebSocket cerrado");
-    ws.onerror = (e) => console.error("💥 WebSocket error", e);
+    socket.on("connect", () => console.log("✅ Socket.IO conectado"));
+    socket.on("disconnect", () => console.log("❌ Socket.IO desconectado"));
+    socket.on("connect_error", (err) => console.error("💥 Socket error", err));
 
-    ws.onmessage = (event) => {
-      const nueva: Medicion = JSON.parse(event.data);
+    socket.on("nueva-medicion", (nueva: Medicion) => {
       setLiveData((prev) => [nueva, ...prev].slice(0, 50));
-    };
+    });
 
-    return () => ws.close();
+    return () => {
+      socket.disconnect(); // ✅ cleanup correcto
+    };
   }, []);
 
   const mediciones = [...(liveData ?? []), ...(fetchedMediciones ?? [])].slice(
@@ -78,12 +80,13 @@ export default function PanelPage() {
       {isLoading ? (
         <p>Cargando mediciones...</p>
       ) : (
-        ["temperatura", "voltaje", "corriente"].map((clave, idx) => {
-          const colores = ["#ff6363", "#36b37e", "#3f83f8"];
+        ["temperatura", "voltaje", "corriente", "bateria"].map((clave, idx) => {
+          const colores = ["#ff6363", "#36b37e", "#3f83f8", "#fbbf24"]; // amarillo para batería
           const titulos = {
             temperatura: "Temperatura (°C)",
             voltaje: "Voltaje (V)",
             corriente: "Corriente (mA)",
+            bateria: "Nivel de batería (V)",
           };
 
           return (

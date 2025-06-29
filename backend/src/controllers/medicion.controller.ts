@@ -3,9 +3,15 @@ import Medicion from "../models/Medicion";
 import { broadcast } from "../services/websocket.service";
 
 export const crearMedicion = async (req: Request, res: Response) => {
-  const { voltaje, corriente, temperatura } = req.body;
+  console.log(req.body);
+  const { voltaje, corriente, temperatura, bateria } = req.body;
   try {
-    const nueva = await Medicion.create({ voltaje, corriente, temperatura });
+    const nueva = await Medicion.create({
+      voltaje,
+      corriente,
+      temperatura,
+      bateria,
+    });
     broadcast(nueva);
     res.status(200).json({ status: "ok" });
   } catch (err) {
