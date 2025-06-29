@@ -1,0 +1,15 @@
+{
+  "folders": [
+    {
+      "name": "tesis",
+      "path": "."
+    },
+    {
+      "name": "backend",
+      "path": "backend"
+    }
+  ],
+  "settings": {
+    "terminal.integrated.cwd": "${workspaceFolder:tesis}"
+  }
+}
