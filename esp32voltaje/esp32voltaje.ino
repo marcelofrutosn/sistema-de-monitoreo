@@ -15,6 +15,8 @@ const char* password = "Paraguay1";
 
 // Backend
 const char* serverUrl = "https://sistema-de-monitoreo-55c14c44edac.herokuapp.com/api/mediciones"; // IP local del backend
+//const char* serverUrl = "http://192.168.100.10:3000/api/mediciones"; // IP local del backend
+
 const char* apiKey = "miclave123";  // si usás API key
 
 INA226_WE ina226 = INA226_WE(I2C_ADDRESS);
