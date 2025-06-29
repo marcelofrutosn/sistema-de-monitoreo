@@ -29,17 +29,17 @@ app.use("/api/auth", authRoutes);
 app.use("/api/mediciones", medicionRoutes);
 
 // Servir frontend desde la carpeta 'public' (Vite build)
-const __dirnameGlobal = path.resolve(); // importante para ES Modules
+const __dirnameGlobal = path.resolve();
 app.use(express.static(path.join(__dirnameGlobal, "public")));
 
 app.get("*", (_, res) => {
   res.sendFile(path.join(__dirnameGlobal, "public", "index.html"));
 });
 
-// WebSocket
+// Socket.IO integrado
 registerWebSocketServer(server);
 
-// Start
+// Iniciar servidor HTTP
 server.listen(PORT, () => {
-  console.log(`Servidor escuchando en el puerto ${PORT}`);
+  console.log(`🚀 Servidor escuchando en el puerto ${PORT}`);
 });
