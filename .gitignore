@@ -4,7 +4,7 @@
 # Ignore dist o build en todos
 **/dist/
 **/build/
-
+heroku/*
 # Logs
 **/*.log
 *.log
