@@ -64,6 +64,7 @@ export default function PanelPage() {
     0,
     50
   );
+  const claves = ["temperatura", "voltaje", "corriente", "bateria"] as const;
 
   return (
     <div className="p-4">
@@ -80,7 +81,7 @@ export default function PanelPage() {
       {isLoading ? (
         <p>Cargando mediciones...</p>
       ) : (
-        ["temperatura", "voltaje", "corriente", "bateria"].map((clave, idx) => {
+        claves.map((clave, idx) => {
           const colores = ["#ff6363", "#36b37e", "#3f83f8", "#fbbf24"]; // amarillo para batería
           const titulos = {
             temperatura: "Temperatura (°C)",
