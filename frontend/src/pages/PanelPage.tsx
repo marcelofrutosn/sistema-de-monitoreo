@@ -113,6 +113,7 @@ export default function PanelPage() {
                       title: titulos[clave],
                     },
                     legend: { position: "none" },
+                    curveType: "function",
                   }}
                 />
               </div>

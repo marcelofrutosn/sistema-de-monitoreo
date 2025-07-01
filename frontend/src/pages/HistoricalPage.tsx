@@ -2,7 +2,8 @@ import { useEffect, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { api } from "@/lib/axios";
 import { Chart } from "react-google-charts";
-
+import { formatISO, startOfDay, endOfDay, parseISO, format } from "date-fns";
+import { zonedTimeToUtc } from "date-fns-tz";
 interface Medicion {
   temperatura: number;
   voltaje: number;
@@ -13,10 +14,10 @@ interface Medicion {
 
 export default function HistoricalPage() {
   const [from, setFrom] = useState(() =>
-    new Date(new Date().setHours(0, 0, 0, 0)).toISOString()
+    formatISO(zonedTimeToUtc(startOfDay(new Date()), "America/Asuncion"))
   );
   const [to, setTo] = useState(() =>
-    new Date(`${new Date().toISOString().replace("Z", "")}-03:00`).toISOString()
+    formatISO(zonedTimeToUtc(endOfDay(new Date()), "America/Asuncion"))
   );
 
   const { data, isLoading, refetch } = useQuery({
@@ -53,15 +54,11 @@ export default function HistoricalPage() {
             new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()
         )
         .map((m) => [
-          new Date(m.timestamp).toLocaleTimeString([], {
-            hour: "2-digit",
-            minute: "2-digit",
-          }),
+          format(new Date(m.timestamp), "dd-MM HH:mm"),
           m[clave] ?? null,
         ]),
     ];
   };
-
   return (
     <div className="p-4">
       <h1 className="text-2xl mb-4">Historial de Mediciones</h1>
@@ -72,9 +69,13 @@ export default function HistoricalPage() {
           <input
             type="datetime-local"
             className="border p-1"
-            value={from.slice(0, 16)}
+            value={format(parseISO(from), "yyyy-MM-dd'T'HH:mm")}
             onChange={(e) =>
-              setFrom(new Date(`${e.target.value}-03:00`).toISOString())
+              setFrom(
+                formatISO(
+                  zonedTimeToUtc(new Date(e.target.value), "America/Asuncion")
+                )
+              )
             }
           />
         </div>
@@ -83,9 +84,13 @@ export default function HistoricalPage() {
           <input
             type="datetime-local"
             className="border p-1"
-            value={to.slice(0, 16)}
+            value={format(parseISO(to), "yyyy-MM-dd'T'HH:mm")}
             onChange={(e) =>
-              setTo(new Date(`${e.target.value}-03:00`).toISOString())
+              setTo(
+                formatISO(
+                  zonedTimeToUtc(new Date(e.target.value), "America/Asuncion")
+                )
+              )
             }
           />
         </div>
@@ -115,6 +120,7 @@ export default function HistoricalPage() {
                 hAxis: { title: "Hora" },
                 vAxis: { title: titulos[clave] },
                 legend: { position: "none" },
+                curveType: "function",
               }}
             />
           </div>
