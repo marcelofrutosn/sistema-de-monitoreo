@@ -4,17 +4,9 @@ import { useAppDispatch } from "../store";
 import { clearToken } from "../store/authSlice";
 import { useQuery } from "@tanstack/react-query";
 import { io } from "socket.io-client";
-import {
-  LineChart,
-  Line,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  ResponsiveContainer,
-} from "recharts";
 import { api } from "@/lib/axios";
 import GaugeComponent from "react-gauge-component";
+import { Chart } from "react-google-charts";
 
 interface Medicion {
   temperatura: number;
@@ -45,15 +37,12 @@ export default function PanelPage() {
 
   useEffect(() => {
     const socket = io(import.meta.env.VITE_WS_URL);
-
     socket.on("connect", () => console.log("✅ Socket.IO conectado"));
     socket.on("disconnect", () => console.log("❌ Socket.IO desconectado"));
     socket.on("connect_error", (err) => console.error("💥 Socket error", err));
-
     socket.on("nueva-medicion", (nueva: Medicion) => {
       setLiveData((prev) => [nueva, ...prev].slice(0, 50));
     });
-
     return () => {
       socket.disconnect();
     };
@@ -65,6 +54,31 @@ export default function PanelPage() {
   );
 
   const claves = ["temperatura", "voltaje", "corriente", "bateria"] as const;
+  const titulos = {
+    temperatura: "Temperatura (°C)",
+    voltaje: "Voltaje (V)",
+    corriente: "Corriente (mA)",
+    bateria: "Batería (V)",
+  };
+
+  const colores = ["#ef4444", "#36b37e", "#3f83f8", "#f59e0b"];
+
+  const formatChartData = (clave: keyof Medicion) => {
+    return [
+      ["Hora", titulos[clave]],
+      ...mediciones
+        .slice()
+        .reverse()
+        .map((m) => [
+          new Date(m.timestamp).toLocaleTimeString([], {
+            hour: "2-digit",
+            minute: "2-digit",
+          }),
+          m[clave] ?? null,
+        ]),
+    ];
+  };
+
   return (
     <div className="p-4">
       <div className="flex justify-between items-center mb-4">
@@ -82,51 +96,27 @@ export default function PanelPage() {
       ) : (
         <>
           <div className="flex gap-4 overflow-x-auto mb-6">
-            {claves.map((clave, idx) => {
-              const colores = ["#ff6363", "#36b37e", "#3f83f8"];
-              const titulos = {
-                temperatura: "Temperatura (°C)",
-                voltaje: "Voltaje (V)",
-                corriente: "Corriente (mA)",
-                bateria: "Bateria (V)",
-              };
-
-              return (
-                <div key={clave} className="flex-1 min-w-[300px]">
-                  <h2 className="text-lg font-semibold mb-2">
-                    {titulos[clave]}
-                  </h2>
-                  <div className="w-full h-60 bg-white border rounded">
-                    <ResponsiveContainer width="100%" height="100%">
-                      <LineChart data={[...mediciones].reverse()}>
-                        <CartesianGrid strokeDasharray="3 3" />
-                        <XAxis
-                          dataKey="timestamp"
-                          tickFormatter={(tick) =>
-                            new Date(tick).toLocaleTimeString([], {
-                              hour: "2-digit",
-                              minute: "2-digit",
-                            })
-                          }
-                        />
-                        <YAxis />
-                        <Tooltip
-                          labelFormatter={(label) =>
-                            new Date(label).toLocaleString()
-                          }
-                        />
-                        <Line
-                          type="monotone"
-                          dataKey={clave}
-                          stroke={colores[idx]}
-                          dot={false}
-                        />
-                      </LineChart>
-                    </ResponsiveContainer>
-                  </div>
-                </div>
-              );
-            })}
+            {claves.map((clave, idx) => (
+              <div key={clave} className="flex-1 min-w-[320px]">
+                <h2 className="text-lg font-semibold mb-2">{titulos[clave]}</h2>
+                <Chart
+                  chartType="LineChart"
+                  width="100%"
+                  height="300px"
+                  data={formatChartData(clave)}
+                  options={{
+                    colors: [colores[idx]],
+                    hAxis: {
+                      title: "Hora",
+                    },
+                    vAxis: {
+                      title: titulos[clave],
+                    },
+                    legend: { position: "none" },
+                  }}
+                />
+              </div>
+            ))}
           </div>
 
           {/* Gauge para batería */}
@@ -145,15 +135,15 @@ export default function PanelPage() {
                   subArcs: [
                     {
                       limit: 20,
-                      color: "#ef4444", // rojo
+                      color: "#ef4444",
                     },
                     {
                       limit: 60,
-                      color: "#facc15", // amarillo
+                      color: "#facc15",
                     },
                     {
                       limit: 100,
-                      color: "#22c55e", // verde
+                      color: "#22c55e",
                     },
                   ],
                 }}
