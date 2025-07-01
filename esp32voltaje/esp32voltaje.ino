@@ -17,7 +17,8 @@ const char* ssid = "Marcelo F";
 const char* password = "Paraguay1";
 
 // Backend
-const char* serverUrl = "http://192.168.100.10:3000/api/mediciones";
+const char* serverUrl = "https://sistema-de-monitoreo-55d27fbf8e95.herokuapp.com/api/mediciones";
+//const char* serverUrl = "http://192.168.100.10:3000/api/mediciones";
 const char* apiKey = "miclave123";
 
 // Objetos de sensores
