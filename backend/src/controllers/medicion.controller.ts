@@ -4,13 +4,14 @@ import { broadcast } from "../services/websocket.service";
 
 export const crearMedicion = async (req: Request, res: Response) => {
   console.log(req.body);
-  const { voltaje, corriente, temperatura, bateria } = req.body;
+  const { voltaje, corriente, temperatura, bateria, potencia } = req.body;
   try {
     const nueva = await Medicion.create({
       voltaje,
       corriente,
       temperatura,
       bateria,
+      potencia,
     });
     broadcast(nueva);
     res.status(200).json({ status: "ok" });

@@ -6,6 +6,7 @@ export interface IMedicion extends Document {
   temperatura: number;
   bateria: number;
   timestamp: Date;
+  potencia: number;
 }
 
 const MedicionSchema = new Schema<IMedicion>({
@@ -13,6 +14,7 @@ const MedicionSchema = new Schema<IMedicion>({
   corriente: Number,
   temperatura: Number,
   bateria: Number,
+  potencia: Number,
   timestamp: { type: Date, default: Date.now },
 });
 
