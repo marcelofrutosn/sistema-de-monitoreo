@@ -6,16 +6,7 @@ import { useQuery } from "@tanstack/react-query";
 import { io } from "socket.io-client";
 import { api } from "@/lib/axios";
 import GaugeComponent from "react-gauge-component";
-import Chart, {
-  ArgumentAxis,
-  ValueAxis,
-  Series,
-  ZoomAndPan,
-  ScrollBar,
-  Tooltip,
-  Legend,
-  Grid,
-} from "devextreme-react/chart";
+import ReactApexChart from "react-apexcharts";
 
 interface Medicion {
   temperatura: number;
@@ -23,6 +14,7 @@ interface Medicion {
   corriente: number;
   bateria?: number;
   timestamp: string;
+  potencia: number;
 }
 
 export default function PanelPage() {
@@ -62,15 +54,60 @@ export default function PanelPage() {
     100
   );
 
-  const claves = ["temperatura", "voltaje", "corriente", "bateria"] as const;
+  const claves = [
+    "potencia",
+    "temperatura",
+    "voltaje",
+    "corriente",
+    "bateria",
+  ] as const;
+
   const titulos = {
     temperatura: "Temperatura (°C)",
     voltaje: "Voltaje (V)",
     corriente: "Corriente (mA)",
     bateria: "Batería (V)",
+    potencia: "Potencia (W)",
   };
 
-  const colores = ["#ef4444", "#36b37e", "#3f83f8", "#f59e0b"];
+  const colores = ["#ef4444", "#36b37e", "#3f83f8", "#f59e0b", "#8b5cf6"];
+
+  const buildChartData = (clave: (typeof claves)[number]) => {
+    return {
+      series: [
+        {
+          name: titulos[clave],
+          data: mediciones.map((m) => ({
+            x: new Date(m.timestamp).getTime(),
+            y: m[clave] ?? null,
+          })),
+        },
+      ],
+      options: {
+        chart: {
+          type: "line" as const,
+          height: 300,
+          zoom: { enabled: true },
+          toolbar: { show: true },
+        },
+        stroke: {
+          curve: "smooth" as const,
+          width: 2,
+        },
+        xaxis: {
+          type: "datetime" as const,
+          labels: { format: "HH:mm" },
+        },
+        yaxis: {
+          labels: { formatter: (val: number) => val.toFixed(2) },
+        },
+        tooltip: {
+          x: { format: "HH:mm:ss" },
+        },
+        colors: [colores[claves.indexOf(clave)]],
+      },
+    };
+  };
 
   return (
     <div className="p-4">
@@ -83,98 +120,82 @@ export default function PanelPage() {
           Cerrar sesión
         </button>
       </div>
+      <div className="flex justify-between items-center">
+        <div className="text-3xl font-bold">Mediciones</div>
+        {(liveData[0]?.bateria || liveData[0]?.bateria === 0) &&
+          (() => {
+            const bateria = liveData[0].bateria || 0;
 
+            // Calculamos el porcentaje relativo (3.2V = 0%, 4.2V = 100%)
+            const porcentaje = Math.min(
+              100,
+              Math.max(0, ((bateria - 3.2) / (4.2 - 3.2)) * 100)
+            );
+
+            // Estado de carga
+            const estado =
+              bateria > 4
+                ? "Midiendo parametros"
+                : bateria >= 3.3 && bateria <= 4
+                ? "Cargando y midiendo"
+                : "Batería baja";
+
+            return (
+              <div className=" p-4">
+                <h2 className="text-lg font-semibold text-center mb-4">
+                  <span>{estado}</span>
+                </h2>
+
+                {/* Barra de progreso */}
+                <div className="w-full bg-gray-200 rounded h-6 overflow-hidden">
+                  <div
+                    className="h-full transition-all duration-500"
+                    style={{
+                      width: `${porcentaje}%`,
+                      backgroundColor:
+                        porcentaje < 20
+                          ? "#ef4444" // rojo
+                          : porcentaje < 60
+                          ? "#facc15" // amarillo
+                          : "#22c55e", // verde
+                    }}
+                  />
+                </div>
+
+                {/* Información a la derecha */}
+                <div className="flex justify-between mt-2">
+                  <span>
+                    {bateria.toFixed(2)} V ({porcentaje.toFixed(0)}%)
+                  </span>
+                </div>
+              </div>
+            );
+          })()}
+      </div>
       {isLoading ? (
         <p>Cargando mediciones...</p>
       ) : (
         <>
-          <div className="flex gap-4 overflow-x-auto mb-6">
-            {claves.map((clave, idx) => (
-              <div key={clave} className="flex-1 min-w-[400px]">
-                <h2 className="text-lg font-semibold mb-2">{titulos[clave]}</h2>
-                <Chart
-                  dataSource={mediciones.map((m) => ({
-                    hora: new Date(m.timestamp),
-                    valor: m[clave] ?? null,
-                  }))}
-                  title={titulos[clave]}
-                  id={`chart-${clave}`}
-                  height={300}
-                >
-                  <ArgumentAxis
-                    argumentType="datetime"
-                    label={{ format: "shortTime" }}
-                    grid={{ visible: true }}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+            {claves.map((clave) => {
+              const chartData = buildChartData(clave);
+              return (
+                <div key={clave} className="flex-1 min-w-[400px] px-10">
+                  <h2 className="text-lg font-semibold mb-2">
+                    {titulos[clave]}
+                  </h2>
+                  <ReactApexChart
+                    options={chartData.options}
+                    series={chartData.series}
+                    type="line"
+                    height={300}
                   />
-                  <ValueAxis>
-                    <Grid visible={true} />
-                  </ValueAxis>
-
-                  <Series
-                    valueField="valor"
-                    argumentField="hora"
-                    type="spline"
-                    color={colores[idx]}
-                  />
-
-                  <ZoomAndPan
-                    argumentAxis="both"
-                    valueAxis="none"
-                    dragToZoom={true}
-                    allowMouseWheel={true}
-                    panKey="shift"
-                  />
-                  <ScrollBar visible={true} />
-                  <Tooltip enabled={true} />
-                  <Legend visible={false} />
-                </Chart>
-              </div>
-            ))}
+                </div>
+              );
+            })}
           </div>
 
           {/* Gauge para batería */}
-          {(liveData[0]?.bateria || liveData[0]?.bateria === 0) && (
-            <div className="max-w-md mx-auto">
-              <h2 className="text-lg font-semibold text-center mb-4">
-                Nivel de batería (V)
-              </h2>
-              <GaugeComponent
-                type="semicircle"
-                arc={{
-                  width: 0.2,
-                  padding: 0.005,
-                  cornerRadius: 1,
-                  gradient: true,
-                  subArcs: [
-                    {
-                      limit: 20,
-                      color: "#ef4444",
-                    },
-                    {
-                      limit: 60,
-                      color: "#facc15",
-                    },
-                    {
-                      limit: 100,
-                      color: "#22c55e",
-                    },
-                  ],
-                }}
-                pointer={{ type: "arrow", color: "#1f2937" }}
-                labels={{
-                  valueLabel: {
-                    formatTextValue: () =>
-                      `${liveData[0].bateria?.toFixed(2)} V`,
-                  },
-                  tickLabels: {
-                    type: "outer",
-                    ticks: [{ value: 0 }, { value: 50 }, { value: 100 }],
-                  },
-                }}
-                value={((liveData[0].bateria - 3.0) / (4.2 - 3.0)) * 100}
-              />
-            </div>
-          )}
         </>
       )}
     </div>

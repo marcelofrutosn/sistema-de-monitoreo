@@ -3,31 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { api } from "@/lib/axios";
 import { formatISO, startOfDay, endOfDay, parseISO, format } from "date-fns";
 import { zonedTimeToUtc } from "date-fns-tz";
-
-import {
-  Chart as ChartJS,
-  LineElement,
-  PointElement,
-  LinearScale,
-  CategoryScale,
-  TimeScale,
-  Tooltip,
-  Legend,
-} from "chart.js";
-import zoomPlugin from "chartjs-plugin-zoom";
-import "chartjs-adapter-date-fns";
-import { Line } from "react-chartjs-2";
-
-ChartJS.register(
-  LineElement,
-  PointElement,
-  LinearScale,
-  CategoryScale,
-  TimeScale,
-  Tooltip,
-  Legend,
-  zoomPlugin
-);
+import ReactApexChart from "react-apexcharts";
 
 interface Medicion {
   temperatura: number;
@@ -35,6 +11,7 @@ interface Medicion {
   corriente: number;
   bateria?: number;
   timestamp: string;
+  potencia: number;
 }
 
 export default function HistoricalPage() {
@@ -60,80 +37,68 @@ export default function HistoricalPage() {
     refetch();
   }, []);
 
-  const claves = ["temperatura", "voltaje", "corriente", "bateria"] as const;
+  const claves = [
+    "potencia",
+    "temperatura",
+    "voltaje",
+    "corriente",
+    "bateria",
+  ] as const;
   const titulos = {
     temperatura: "Temperatura (°C)",
     voltaje: "Voltaje (V)",
     corriente: "Corriente (mA)",
     bateria: "Batería (V)",
+    potencia: "Potencia (W)",
   };
-  const colores = ["#ef4444", "#36b37e", "#3f83f8", "#f59e0b"];
-
-  const getChartData = (clave: keyof Medicion) => {
+  const colores = ["#ef4444", "#36b37e", "#3f83f8", "#f59e0b", "#8b5cf6"];
+  const getChartData = (clave: (typeof claves)[number]) => {
     const sorted = (data ?? []).sort(
       (a, b) =>
         new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()
     );
+
     return {
-      labels: sorted.map((m) => new Date(m.timestamp)),
-      datasets: [
+      series: [
         {
-          label: titulos[clave],
-          data: sorted.map((m) => m[clave] ?? null),
-          borderColor: colores[claves.indexOf(clave)],
-          backgroundColor: colores[claves.indexOf(clave)],
-          fill: false,
-          tension: 0, // curva suave
-          pointRadius: 0, // 🔥 No visible dots
+          name: titulos[clave],
+          data: sorted.map((m) => ({
+            x: new Date(m.timestamp).getTime(),
+            y: m[clave] ?? null,
+          })),
         },
       ],
+      options: {
+        chart: {
+          type: "line" as const,
+          height: 200,
+          zoom: { enabled: true, type: "x", autoScaleYaxis: true },
+          toolbar: { show: true },
+        },
+        stroke: { curve: "smooth" as const, width: 2 },
+        colors: [colores[claves.indexOf(clave)]],
+        xaxis: {
+          type: "datetime" as const,
+          labels: {
+            datetimeUTC: false,
+            format: "HH:mm",
+          },
+          title: { text: "Hora" },
+        },
+        yaxis: {
+          title: { text: "Valor" },
+          decimalsInFloat: 2,
+        },
+        tooltip: {
+          x: { format: "HH:mm:ss" },
+        },
+        legend: { show: false },
+      },
     };
-  };
-  const options = {
-    responsive: true,
-    maintainAspectRatio: false,
-    plugins: {
-      zoom: {
-        zoom: {
-          wheel: { enabled: true },
-          pinch: { enabled: true },
-          mode: "x" as const, // 👈 fix aquí
-        },
-        pan: {
-          enabled: true,
-          mode: "x" as const, // 👈 fix aquí también
-        },
-      },
-      legend: {
-        display: false,
-      },
-      tooltip: {
-        mode: "index" as const,
-        intersect: false,
-      },
-    },
-    scales: {
-      x: {
-        type: "time" as const,
-        time: {
-          tooltipFormat: "dd-MM HH:mm",
-        },
-        title: {
-          display: true,
-          text: "Hora",
-        },
-      },
-      y: {
-        title: {
-          display: true,
-          text: "Valor",
-        },
-      },
-    },
   };
 
   return (
-    <div className="p-4">
+    <div className="p-4 ">
       <h1 className="text-2xl mb-4">Historial de Mediciones</h1>
 
       <div className="flex gap-4 mb-6 flex-wrap">
@@ -178,20 +143,24 @@ export default function HistoricalPage() {
       {isLoading ? (
         <p>Cargando datos...</p>
       ) : (
-        claves.map((clave) => (
-          <div key={clave} className="mb-6">
-            <h2 className="text-lg font-semibold mb-2 capitalize">
-              {titulos[clave]}
-            </h2>
-            <div className="h-[200px] w-full">
-              <Line
-                data={getChartData(clave)}
-                options={options}
-                width={"100%"}
-              />
-            </div>{" "}
-          </div>
-        ))
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+          {claves.map((clave) => {
+            const chart = getChartData(clave);
+            return (
+              <div key={clave} className="mb-6 px-10">
+                <h2 className="text-lg font-semibold mb-2 capitalize">
+                  {titulos[clave]}
+                </h2>
+                <ReactApexChart
+                  options={chart.options}
+                  series={chart.series}
+                  type="line"
+                  height={200}
+                />
+              </div>
+            );
+          })}
+        </div>
       )}
     </div>
   );
