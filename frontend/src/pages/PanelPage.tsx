@@ -6,7 +6,16 @@ import { useQuery } from "@tanstack/react-query";
 import { io } from "socket.io-client";
 import { api } from "@/lib/axios";
 import GaugeComponent from "react-gauge-component";
-import { Chart } from "react-google-charts";
+import Chart, {
+  ArgumentAxis,
+  ValueAxis,
+  Series,
+  ZoomAndPan,
+  ScrollBar,
+  Tooltip,
+  Legend,
+  Grid,
+} from "devextreme-react/chart";
 
 interface Medicion {
   temperatura: number;
@@ -63,22 +72,6 @@ export default function PanelPage() {
 
   const colores = ["#ef4444", "#36b37e", "#3f83f8", "#f59e0b"];
 
-  const formatChartData = (clave: keyof Medicion) => {
-    return [
-      ["Hora", titulos[clave]],
-      ...mediciones
-        .slice()
-        .reverse()
-        .map((m) => [
-          new Date(m.timestamp).toLocaleTimeString([], {
-            hour: "2-digit",
-            minute: "2-digit",
-          }),
-          m[clave] ?? null,
-        ]),
-    ];
-  };
-
   return (
     <div className="p-4">
       <div className="flex justify-between items-center mb-4">
@@ -97,25 +90,44 @@ export default function PanelPage() {
         <>
           <div className="flex gap-4 overflow-x-auto mb-6">
             {claves.map((clave, idx) => (
-              <div key={clave} className="flex-1 min-w-[320px]">
+              <div key={clave} className="flex-1 min-w-[400px]">
                 <h2 className="text-lg font-semibold mb-2">{titulos[clave]}</h2>
                 <Chart
-                  chartType="LineChart"
-                  width="100%"
-                  height="300px"
-                  data={formatChartData(clave)}
-                  options={{
-                    colors: [colores[idx]],
-                    hAxis: {
-                      title: "Hora",
-                    },
-                    vAxis: {
-                      title: titulos[clave],
-                    },
-                    legend: { position: "none" },
-                    curveType: "function",
-                  }}
-                />
+                  dataSource={mediciones.map((m) => ({
+                    hora: new Date(m.timestamp),
+                    valor: m[clave] ?? null,
+                  }))}
+                  title={titulos[clave]}
+                  id={`chart-${clave}`}
+                  height={300}
+                >
+                  <ArgumentAxis
+                    argumentType="datetime"
+                    label={{ format: "shortTime" }}
+                    grid={{ visible: true }}
+                  />
+                  <ValueAxis>
+                    <Grid visible={true} />
+                  </ValueAxis>
+
+                  <Series
+                    valueField="valor"
+                    argumentField="hora"
+                    type="spline"
+                    color={colores[idx]}
+                  />
+
+                  <ZoomAndPan
+                    argumentAxis="both"
+                    valueAxis="none"
+                    dragToZoom={true}
+                    allowMouseWheel={true}
+                    panKey="shift"
+                  />
+                  <ScrollBar visible={true} />
+                  <Tooltip enabled={true} />
+                  <Legend visible={false} />
+                </Chart>
               </div>
             ))}
           </div>

@@ -1,9 +1,34 @@
 import { useEffect, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { api } from "@/lib/axios";
-import { Chart } from "react-google-charts";
 import { formatISO, startOfDay, endOfDay, parseISO, format } from "date-fns";
 import { zonedTimeToUtc } from "date-fns-tz";
+
+import {
+  Chart as ChartJS,
+  LineElement,
+  PointElement,
+  LinearScale,
+  CategoryScale,
+  TimeScale,
+  Tooltip,
+  Legend,
+} from "chart.js";
+import zoomPlugin from "chartjs-plugin-zoom";
+import "chartjs-adapter-date-fns";
+import { Line } from "react-chartjs-2";
+
+ChartJS.register(
+  LineElement,
+  PointElement,
+  LinearScale,
+  CategoryScale,
+  TimeScale,
+  Tooltip,
+  Legend,
+  zoomPlugin
+);
+
 interface Medicion {
   temperatura: number;
   voltaje: number;
@@ -42,23 +67,71 @@ export default function HistoricalPage() {
     corriente: "Corriente (mA)",
     bateria: "Batería (V)",
   };
-  const colores = ["#ff6363", "#36b37e", "#3f83f8", "#f59e0b"];
+  const colores = ["#ef4444", "#36b37e", "#3f83f8", "#f59e0b"];
 
-  const formatChartData = (clave: keyof Medicion) => {
-    return [
-      ["Hora", titulos[clave]],
-      ...(data ?? [])
-        .slice()
-        .sort(
-          (a, b) =>
-            new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()
-        )
-        .map((m) => [
-          format(new Date(m.timestamp), "dd-MM HH:mm"),
-          m[clave] ?? null,
-        ]),
-    ];
+  const getChartData = (clave: keyof Medicion) => {
+    const sorted = (data ?? []).sort(
+      (a, b) =>
+        new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()
+    );
+    return {
+      labels: sorted.map((m) => new Date(m.timestamp)),
+      datasets: [
+        {
+          label: titulos[clave],
+          data: sorted.map((m) => m[clave] ?? null),
+          borderColor: colores[claves.indexOf(clave)],
+          backgroundColor: colores[claves.indexOf(clave)],
+          fill: false,
+          tension: 0, // curva suave
+          pointRadius: 0, // 🔥 No visible dots
+        },
+      ],
+    };
   };
+  const options = {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+      zoom: {
+        zoom: {
+          wheel: { enabled: true },
+          pinch: { enabled: true },
+          mode: "x" as const, // 👈 fix aquí
+        },
+        pan: {
+          enabled: true,
+          mode: "x" as const, // 👈 fix aquí también
+        },
+      },
+      legend: {
+        display: false,
+      },
+      tooltip: {
+        mode: "index" as const,
+        intersect: false,
+      },
+    },
+    scales: {
+      x: {
+        type: "time" as const,
+        time: {
+          tooltipFormat: "dd-MM HH:mm",
+        },
+        title: {
+          display: true,
+          text: "Hora",
+        },
+      },
+      y: {
+        title: {
+          display: true,
+          text: "Valor",
+        },
+      },
+    },
+  };
+
   return (
     <div className="p-4">
       <h1 className="text-2xl mb-4">Historial de Mediciones</h1>
@@ -105,24 +178,18 @@ export default function HistoricalPage() {
       {isLoading ? (
         <p>Cargando datos...</p>
       ) : (
-        claves.map((clave, idx) => (
+        claves.map((clave) => (
           <div key={clave} className="mb-6">
             <h2 className="text-lg font-semibold mb-2 capitalize">
               {titulos[clave]}
             </h2>
-            <Chart
-              chartType="LineChart"
-              width="100%"
-              height="300px"
-              data={formatChartData(clave)}
-              options={{
-                colors: [colores[idx]],
-                hAxis: { title: "Hora" },
-                vAxis: { title: titulos[clave] },
-                legend: { position: "none" },
-                curveType: "function",
-              }}
-            />
+            <div className="h-[200px] w-full">
+              <Line
+                data={getChartData(clave)}
+                options={options}
+                width={"100%"}
+              />
+            </div>{" "}
           </div>
         ))
       )}
