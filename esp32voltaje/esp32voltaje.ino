@@ -215,8 +215,7 @@ void enviarDatos(float voltaje, float corriente, float temperatura, float bateri
   payload += "\"corriente\":" + String(corriente, 3) + ",";
   payload += "\"temperatura\":" + String(temperatura, 2) + ",";
   payload += "\"bateria\":" + String(bateria, 3) + ",";
-  payload += "\"potencia\":" + String((voltaje * corriente / 1000.0), 3) + ",";
-  payload += "\"timestamp\":" + String(millis());
+  payload += "\"potencia\":" + String((voltaje * corriente / 1000.0), 3);
   payload += "}";
 
   Serial.println("📤 Payload: " + payload);
