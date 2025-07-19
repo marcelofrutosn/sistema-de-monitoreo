@@ -62,10 +62,20 @@ export default function HistoricalPage() {
       series: [
         {
           name: titulos[clave],
-          data: sorted.map((m) => ({
-            x: new Date(m.timestamp).getTime(),
-            y: m[clave] ?? null,
-          })),
+          data: sorted.map((m) => {
+            // Crear fecha UTC y ajustar a zona horaria local de Paraguay (UTC-3)
+            const utcDate = new Date(m.timestamp);
+            // Obtener offset de zona horaria local en minutos
+            const timezoneOffset = utcDate.getTimezoneOffset();
+            // Ajustar el timestamp para mostrar hora local
+            const localTimestamp =
+              utcDate.getTime() - timezoneOffset * 60 * 1000;
+
+            return {
+              x: localTimestamp,
+              y: m[clave] ?? null,
+            };
+          }),
         },
       ],
       options: {
@@ -75,12 +85,11 @@ export default function HistoricalPage() {
           zoom: { enabled: true, type: "x", autoScaleYaxis: true },
           toolbar: { show: true },
         },
-        stroke: { curve: "smooth" as const, width: 2 },
+        stroke: { curve: "smooth" as const, width: 1 },
         colors: [colores[claves.indexOf(clave)]],
         xaxis: {
           type: "datetime" as const,
           labels: {
-            datetimeUTC: false,
             format: "HH:mm",
           },
           title: { text: "Hora" },

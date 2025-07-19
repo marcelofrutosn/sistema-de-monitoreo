@@ -77,10 +77,20 @@ export default function PanelPage() {
       series: [
         {
           name: titulos[clave],
-          data: mediciones.map((m) => ({
-            x: new Date(m.timestamp).getTime(),
-            y: m[clave] ?? null,
-          })),
+          data: mediciones.map((m) => {
+            // Crear fecha UTC y ajustar a zona horaria local de Paraguay (UTC-3)
+            const utcDate = new Date(m.timestamp);
+            // Obtener offset de zona horaria local en minutos
+            const timezoneOffset = utcDate.getTimezoneOffset();
+            // Ajustar el timestamp para mostrar hora local
+            const localTimestamp =
+              utcDate.getTime() - timezoneOffset * 60 * 1000;
+
+            return {
+              x: localTimestamp,
+              y: m[clave] ?? null,
+            };
+          }),
         },
       ],
       options: {
@@ -92,7 +102,7 @@ export default function PanelPage() {
         },
         stroke: {
           curve: "smooth" as const,
-          width: 2,
+          width: 1,
         },
         xaxis: {
           type: "datetime" as const,
